@@ -2,15 +2,12 @@
   import Header from './components/Header.vue';
   import Balance from './components/Balance.vue';
   import IncomeExpenses from './components/IncomeExpenses.vue';
-  import AddTransactions from './components/AddTransactions.vue';
-  import {ref, computed} from 'vue'
+  import AddTransaction from './components/AddTransaction.vue';
+  import TransactionList from './components/TransactionList.vue';
+  import {ref, computed, onMounted} from 'vue'
 
   const transactions = ref([
-    {id: 1, text:'Paycheck', amount: 700.00},
-    {id: 2, text:'Water Bill', amount: -72.83},
-    {id: 3, text:'Electric Bill', amount: -153.89},
-    {id: 4, text:'Returned Item', amount: 20.00},
-  ])
+    ])
 
   const sum = computed(()=>{
     return transactions.value.reduce((acc,  x)=>{
@@ -33,6 +30,36 @@
       return acc+x.amount
     },0)
   })
+
+  const handleTransaction = (transactionData) => {
+    transactions.value.push({
+      id: generateID(), 
+      text: transactionData.text,
+      amount: transactionData.amount,
+    })
+    saveToLocalStorage()
+  }
+
+  const generateID = () => {
+    return Math.floor(Math.random()*10000000)
+  }
+
+  const handleDelete = (id) => {
+    transactions.value = transactions.value.filter((x) => x.id !== id)
+    saveToLocalStorage()
+  }
+
+  const saveToLocalStorage = () => {
+    localStorage.setItem('transactions', JSON.stringify(transactions.value))
+  }
+
+  onMounted( () => {
+    const savedTransactions = JSON.parse(localStorage.getItem('transactions'))
+
+    if(savedTransactions){
+      transactions.value = savedTransactions
+    }
+  })
 </script>
 
 <template>
@@ -40,7 +67,8 @@
   <div class="container">
     <Balance :total="sum"></Balance>
     <IncomeExpenses :income="moneyIn" :expense="moneyOut"></IncomeExpenses>
-    <AddTransactions></AddTransactions>
+    <AddTransaction @transactionSubmitted="handleTransaction"></AddTransaction>
+    <TransactionList :transactions="transactions" @transactionDeleted="handleDelete"></TransactionList>
   </div>
 
 </template>
